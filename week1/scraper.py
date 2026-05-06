@@ -23,6 +23,14 @@ def fetch_website_contents(url):
     
     return (title + '\n\n' + text)[:2000]
 
+def fetch_website_links(url):
+    '''
+    Return the links on the website at the given url
+    '''
+    response = requests.get(url, headers)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    links = [link.get('href') for link in soup.find_all('a')]
+    return [link for link in links if link]
 
 # from selenium import webdriver
 # from selenium.webdriver.chrome.options import Options
