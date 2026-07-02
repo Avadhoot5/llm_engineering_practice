@@ -11,3 +11,7 @@ uv.lock
 # Virtual environments
 .env
 .venv
+
+App/
+config.py
+.vscode
