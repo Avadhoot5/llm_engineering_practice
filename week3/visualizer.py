@@ -2,15 +2,18 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from typing import List, Dict
 import math
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 from dotenv import load_dotenv
+from App.config import headers, azure_endpoint, api_version
+import os 
 
 load_dotenv(override=True)
 
+api_key = os.getenv('cd_api_key')
 
 class TokenPredictor:
     def __init__(self, model_name: str):
-        self.client = OpenAI()
+        self.client = AzureOpenAI(api_key=api_key, azure_endpoint=azure_endpoint, api_version=api_version)
         self.messages = []
         self.predictions = []
         self.model_name = model_name
@@ -24,6 +27,7 @@ class TokenPredictor:
             model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
+            extra_headers = headers,
             temperature=0,  # Use temperature 0 for deterministic output
             logprobs=True,
             seed=42,
@@ -33,6 +37,8 @@ class TokenPredictor:
 
         predictions = []
         for chunk in response:
+            if not chunk.choices:
+                continue
             if chunk.choices[0].delta.content:
                 token = chunk.choices[0].delta.content
                 logprobs = chunk.choices[0].logprobs.content[0].top_logprobs
