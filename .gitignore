@@ -15,3 +15,6 @@ uv.lock
 App/
 config.py
 .vscode
+
+/week5/vector_db/*/
+
