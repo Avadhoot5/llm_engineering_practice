@@ -3,6 +3,8 @@ import math
 from pydantic import BaseModel, Field
 from litellm import completion
 from dotenv import load_dotenv
+import os
+from App.config import azure_endpoint, api_version, headers
 
 from week5.evaluation.test import TestQuestion, load_tests
 from week5.implementation.answer import answer_question, fetch_context
@@ -10,9 +12,19 @@ from week5.implementation.answer import answer_question, fetch_context
 
 load_dotenv(override=True)
 
-MODEL = 'gpt-oss:120b'
+# db_name = 'week5/vector_db'
+
+# Use below for open source ollama gpt:oss model. Note - modified the system prompt, as it was failing in AnswerEval validation, even after passing response_format for structured outputs.
+
+# MODEL_OLLAMA = 'ollama/gpt-oss:20b-cloud'
+# ollama_url = "https://ollama.com"
+# OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY')
+
+# Below LLM as a judge works properly
+
 db_name = 'week5/vector_db'
-ollama_url = "https://ollama.com"
+MODEL = 'azure/gpt-4.1-mini'
+OPENAI_API_KEY = os.getenv('cd_api_key_backup')
 
 class RetrievalEval(BaseModel):
     """Evaluation metrics for retrieval performance."""
@@ -130,7 +142,7 @@ def evaluate_answer(test: TestQuestion) -> tuple[AnswerEval, str, list]:
     judge_messages = [
         {
             "role": "system",
-            "content": "You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.",
+            "content": """You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.""",
         },
         {
             "role": "user",
@@ -153,8 +165,14 @@ Provide detailed feedback and scores from 1 (very poor) to 5 (ideal) for each di
     ]
 
     # Call LLM judge with structured outputs (async)
-    judge_response = completion(base_url=ollama_url, model=MODEL, messages=judge_messages, response_format=AnswerEval)
+    
+    # Ollama - gpt-oss version - free version 
+    # judge_response = completion(model=MODEL_OLLAMA, api_key=OLLAMA_API_KEY, api_base=ollama_url,  messages=judge_messages, response_format=AnswerEval)
 
+    # OpenAI GPT version - paid version
+    judge_response = completion(model=MODEL, api_key=OPENAI_API_KEY, api_base=azure_endpoint, api_version=api_version, extra_headers=headers, messages=judge_messages, response_format=AnswerEval)
+
+    # Validate the response, should be in JSON format only, with the AnswerEval declared types
     answer_eval = AnswerEval.model_validate_json(judge_response.choices[0].message.content)
 
     return answer_eval, generated_answer, retrieved_docs
@@ -243,6 +261,33 @@ def main():
 
     run_cli_evaluation(test_number)
 
+# Use below to make the model not hallucinate
+# ollama_gpt_oss_judge_messages = [
+#         {
+#             "role": "system",
+#             "content": """You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.
+#             Return ONLY one valid JSON object with exactly these fields:
+
+#             {
+#             "feedback": "concise explanation",
+#             "accuracy": 1.0,
+#             "completeness": 1.0,
+#             "relevance": 1.0
+#             }
+
+#             Rules:
+#             - feedback must be a string.
+#             - accuracy, completeness, and relevance must be numbers from 1 to 5.
+#             - Accuracy: 1 = wrong, 5 = perfectly accurate.
+#             - Completeness: 1 = missing key information, 5 = all required information is present.
+#             - Relevance: 1 = off-topic, 5 = directly answers the question without unnecessary information.
+#             - Only give 5/5 for a genuinely perfect score.
+#             - Do not hallucinate.
+#             - Do not use Markdown.
+#             - Do not use ```json fences.
+#             - Do not include any text before or after the JSON object.
+#             """,
+#         }
 
 if __name__ == "__main__":
     main()

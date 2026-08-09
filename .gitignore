@@ -16,5 +16,6 @@ App/
 config.py
 .vscode
 
-/week5/vector_db/*/
-
+/week5/vector_db/*
+week5/vector_db/chroma.sqlite3
+week5/results/

@@ -18,7 +18,7 @@ ollama_api_key = os.getenv('OLLAMA_API_KEY')
 ollama_url = "https://ollama.com"
 
 embeddings = HuggingFaceEmbeddings(model='all-MiniLM-L6-v2')
-RETRIEVAL_K = 5
+RETRIEVAL_K = 10
 
 SYSTEM_PROMPT_TEMPLATE = """
 You are a knowledgeable, friendly assistant representing the company Insurellm.
