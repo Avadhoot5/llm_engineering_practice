@@ -16,15 +16,15 @@ load_dotenv(override=True)
 
 # Use below for open source ollama gpt:oss model. Note - modified the system prompt, as it was failing in AnswerEval validation, even after passing response_format for structured outputs.
 
-# MODEL_OLLAMA = 'ollama/gpt-oss:20b-cloud'
-# ollama_url = "https://ollama.com"
-# OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY')
+MODEL_OLLAMA = 'ollama/gpt-oss:120b-cloud'
+ollama_url = "https://ollama.com"
+OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY')
 
 # Below LLM as a judge works properly
 
-db_name = 'week5/vector_db'
-MODEL = 'azure/gpt-4.1-mini'
-OPENAI_API_KEY = os.getenv('cd_api_key_backup')
+# db_name = 'week5/vector_db'
+# MODEL = 'azure/gpt-4.1-mini'
+# OPENAI_API_KEY = os.getenv('cd_api_key_backup')
 
 class RetrievalEval(BaseModel):
     """Evaluation metrics for retrieval performance."""
@@ -140,9 +140,35 @@ def evaluate_answer(test: TestQuestion) -> tuple[AnswerEval, str, list]:
 
     # LLM judge prompt
     judge_messages = [
+        # {
+            
+        #     "role": "system",
+        #     "content": """You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.""",
+        # },
+    {
+        "role": "system",
+        "content": """You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.
+        Return ONLY one valid JSON object with exactly these fields:
+
         {
-            "role": "system",
-            "content": """You are an expert evaluator assessing the quality of answers. Evaluate the generated answer by comparing it to the reference answer. Only give 5/5 scores for perfect answers.""",
+        "feedback": "concise explanation",
+        "accuracy": 1.0,
+        "completeness": 1.0,
+        "relevance": 1.0
+        }
+
+        Rules:
+        - feedback must be a string.
+        - accuracy, completeness, and relevance must be numbers from 1 to 5.
+        - Accuracy: 1 = wrong, 5 = perfectly accurate.
+        - Completeness: 1 = missing key information, 5 = all required information is present.
+        - Relevance: 1 = off-topic, 5 = directly answers the question without unnecessary information.
+        - Only give 5/5 for a genuinely perfect score.
+        - Do not hallucinate.
+        - Do not use Markdown.
+        - Do not use ```json fences.
+        - Do not include any text before or after the JSON object.
+        """,
         },
         {
             "role": "user",
@@ -167,10 +193,10 @@ Provide detailed feedback and scores from 1 (very poor) to 5 (ideal) for each di
     # Call LLM judge with structured outputs (async)
     
     # Ollama - gpt-oss version - free version 
-    # judge_response = completion(model=MODEL_OLLAMA, api_key=OLLAMA_API_KEY, api_base=ollama_url,  messages=judge_messages, response_format=AnswerEval)
+    judge_response = completion(model=MODEL_OLLAMA, api_key=OLLAMA_API_KEY, api_base=ollama_url,  messages=judge_messages, format='json')
 
     # OpenAI GPT version - paid version
-    judge_response = completion(model=MODEL, api_key=OPENAI_API_KEY, api_base=azure_endpoint, api_version=api_version, extra_headers=headers, messages=judge_messages, response_format=AnswerEval)
+    # judge_response = completion(model=MODEL, api_key=OPENAI_API_KEY, api_base=azure_endpoint, api_version=api_version, extra_headers=headers, messages=judge_messages, response_format=AnswerEval)
 
     # Validate the response, should be in JSON format only, with the AnswerEval declared types
     answer_eval = AnswerEval.model_validate_json(judge_response.choices[0].message.content)
