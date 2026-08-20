@@ -22,3 +22,4 @@ week5/results/
 week5/preprocessed_db/
 week5/vector_db/chroma.sqlite3
 
+week6/jsonl/*
