@@ -14,7 +14,8 @@ load_dotenv(override=True)
 
 # db_name = 'week5/vector_db'
 
-# Use below for open source ollama gpt:oss model. Note - modified the system prompt, as it was failing in AnswerEval validation, even after passing response_format for structured outputs.
+# Use below for open source ollama gpt:oss model. Note - modified the system prompt, as it was failing in AnswerEval validation
+# Even after passing response_format for structured outputs --update [ollama does not support structured outputs at the time rag pipeline was written]
 
 MODEL_OLLAMA = 'ollama/gpt-oss:120b-cloud'
 ollama_url = "https://ollama.com"
