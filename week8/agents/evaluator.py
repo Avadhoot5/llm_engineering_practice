@@ -14,8 +14,8 @@ RED = "\033[91m"
 RESET = "\033[0m"
 COLOR_MAP = {"red": RED, "orange": YELLOW, "green": GREEN}
 
-WORKERS = 5
-DEFAULT_SIZE = 200
+WORKERS = 3
+DEFAULT_SIZE = 20
 
 
 class Tester:

@@ -30,6 +30,8 @@ class Preprocessor():
         self.base_url = base_url
         if (("ollama" in model_name and "gpt-oss" not in model_name) and not base_url):
             self.base_url = "http://localhost:11434"
+        if ("gpt-oss" in model_name and model_name.startswith("ollama")):
+            self.base_url="https://ollama.com/"
 
     def messages_for(self, text: str) -> list[dict]:
         return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
