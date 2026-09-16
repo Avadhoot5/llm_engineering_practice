@@ -1,8 +1,14 @@
 from typing import Optional, List
-from openai import OpenAI
-from agents.deals import ScrapedDeal, DealSelection
-from agents.agent import Agent
+from openai import AzureOpenAI
+from App.config import azure_endpoint, api_version, headers
+from week8.agents.deals import ScrapedDeal, DealSelection
+from week8.agents.agent import Agent
+import os
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
+
+OPENAI_API_KEY = os.getenv('cd_api_key_backup')
 
 class ScannerAgent(Agent):
     MODEL = "gpt-5-mini"
@@ -32,7 +38,7 @@ class ScannerAgent(Agent):
         Set up this instance by initializing OpenAI
         """
         self.log("Scanner Agent is initializing")
-        self.openai = OpenAI()
+        self.openai = AzureOpenAI(azure_endpoint=azure_endpoint, api_version=api_version, api_key=OPENAI_API_KEY)
         self.log("Scanner Agent is ready")
 
     def fetch_deals(self, memory) -> List[ScrapedDeal]:
@@ -75,6 +81,7 @@ class ScannerAgent(Agent):
                 ],
                 response_format=DealSelection,
                 reasoning_effort="minimal",
+                extra_headers=headers
             )
             result = result.choices[0].message.parsed
             result.deals = [deal for deal in result.deals if deal.price > 0]
